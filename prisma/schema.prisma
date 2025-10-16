@@ -1,0 +1,114 @@
+/// Prisma schema modeling Ubani core entities.
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum PostType {
+  ERRAND
+  ALERT
+  LISTING
+  LOST
+  FOUND
+}
+
+enum MembershipRole {
+  MEMBER
+  ORGANIZER
+  ADMIN
+}
+
+model User {
+  id                  String        @id @default(cuid())
+  email               String        @unique
+  fullName            String
+  avatarUrl           String?
+  yearsInNeighborhood Int           @default(0)
+  bio                 String?       @db.Text
+  badges              String[]
+  posts               Post[]
+  memberships         Membership[]
+  chatThreads         ChatThread[]  @relation("ThreadOwner")
+  messages            Message[]
+  ratingsGiven        Rating[]      @relation("RatingsGiven")
+  ratingsReceived     Rating[]      @relation("RatingsReceived")
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+}
+
+model Samezoblo {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  latitude    Float
+  longitude   Float
+  radiusM     Int
+  description String?
+  posts       Post[]
+  memberships Membership[]
+  createdAt   DateTime      @default(now())
+}
+
+model Membership {
+  id          String          @id @default(cuid())
+  user        User            @relation(fields: [userId], references: [id])
+  userId      String
+  samezoblo   Samezoblo       @relation(fields: [samezobloId], references: [id])
+  samezobloId String
+  role        MembershipRole  @default(MEMBER)
+  joinedAt    DateTime        @default(now())
+}
+
+model Post {
+  id          String        @id @default(cuid())
+  type        PostType
+  title       String
+  body        String        @db.Text
+  tags        String[]
+  author      User          @relation(fields: [authorId], references: [id])
+  authorId    String
+  samezoblo   Samezoblo     @relation(fields: [samezobloId], references: [id])
+  samezobloId String
+  thread      ChatThread?   @relation("PostThread")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model ChatThread {
+  id            String      @id @default(cuid())
+  post          Post?       @relation("PostThread", fields: [postId], references: [id])
+  postId        String?
+  owner         User        @relation("ThreadOwner", fields: [ownerId], references: [id])
+  ownerId       String
+  participant   User        @relation(fields: [participantId], references: [id])
+  participantId String
+  messages      Message[]
+  createdAt     DateTime    @default(now())
+}
+
+model Message {
+  id        String      @id @default(cuid())
+  thread    ChatThread  @relation(fields: [threadId], references: [id])
+  threadId  String
+  author    User        @relation(fields: [authorId], references: [id])
+  authorId  String
+  body      String
+  sentAt    DateTime    @default(now())
+}
+
+model Rating {
+  id         String    @id @default(cuid())
+  score      Int
+  comment    String?
+  errandPost Post      @relation(fields: [postId], references: [id])
+  postId     String
+  fromUser   User      @relation("RatingsGiven", fields: [fromUserId], references: [id])
+  fromUserId String
+  toUser     User      @relation("RatingsReceived", fields: [toUserId], references: [id])
+  toUserId   String
+  createdAt  DateTime  @default(now())
+}

@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  @apply bg-stone-50 text-stone-800 antialiased dark:bg-stone-900 dark:text-stone-100;
+}
+
+::selection {
+  @apply bg-primary text-primary-foreground;
+}
+
+[data-theme="stone"] {
+  --background: #fafaf9;
+  --foreground: #1c1917;
+}
